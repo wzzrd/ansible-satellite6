@@ -78,7 +78,7 @@ class SatelliteInventory(object):
 
         self.post_headers = {'content-type': 'application/json'}
 
-        if self.caller == 'tower':
+        if self.caller == 'tower' or self.args.noverifyssl == True:
             self.ssl_verify = False
         else:
             self.ssl_verify = True
@@ -156,6 +156,7 @@ class SatelliteInventory(object):
         parser = argparse.ArgumentParser(description='Produce an Ansible Inventory file based on Satellite 6')
         parser.add_argument('--list', action='store_true', default=True, help='List instances (default: True)')
         parser.add_argument('--host', action='store', help='Get all the variables about a specific instance')
+        parser.add_argument('--noverifyssl', action='store_true', default=False, help='Do not verify SSL certificates (default: False, True if run from Tower)')
         parser.add_argument('--refresh-cache', action='store_true', default=False,
                             help='Force refresh of cache by making API requests to hammer (default: False - use cache files)')
         self.args = parser.parse_args()
