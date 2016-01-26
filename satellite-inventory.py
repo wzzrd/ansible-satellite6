@@ -26,7 +26,7 @@ See http://ansible.github.com/api.html for more info
 Tested with Satellite 6.1.6
 
 Changelog:
-    - 2016-01-26 mburgerh: Cleanup
+    - 2016-01-26 mburgerh: Cleanup, SSL fixes,
     - 2015-11-02 nstrug: Initial version, based on cobbler.py
 
 """
@@ -77,7 +77,11 @@ class SatelliteInventory(object):
         self.parse_cli_args()
 
         self.post_headers = {'content-type': 'application/json'}
-        self.ssl_verify = False
+
+        if self.caller == 'tower':
+            self.ssl_verify = False
+        else:
+            self.ssl_verify = True
 
         self.org = self.get_json(self.sat_api + "organizations?search="
                                  + self._org_name)
@@ -123,12 +127,19 @@ class SatelliteInventory(object):
         """ Reads the settings from the hammer.ini file """
 
         config = ConfigParser.SafeConfigParser()
-        config.read(os.path.dirname(os.path.realpath(__file__))
-                    + '/hammer.ini')
+
+        self._filename = os.path.realpath(__file__)
+        if "/tmp/ansible_tower_launch" in self._filename:
+            # we're running from tower
+            config.read('/etc/ansible/hammer.ini')
+            self.caller = 'tower'
+        else:
+            config.read(os.path.dirname(os.path.realpath(__file__))
+                        + '/hammer.ini')
+            self.caller = 'shell'
 
         self._host = config.get('hammer', 'host')
         self.sat_api = "%s/api/v2/" % self._host
-        self.katello_api = "%s/katello/api/v2/" % self._host
         self._username = config.get('hammer', 'username')
         self._password = config.get('hammer', 'password')
         self._org_name = config.get('hammer', 'organisation')
